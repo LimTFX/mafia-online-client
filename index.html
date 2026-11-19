@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Онлайн Мафия — Ведущий</title>
+  <link rel="stylesheet" href="./css/reset.css">
+  <link rel="stylesheet" href="./css/variables.css">
+  <link rel="stylesheet" href="./css/layout.css">
+  <link rel="stylesheet" href="./css/components.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="logo">🎭 MAFIA ONLINE</div>
+    <div id="user-badge" class="user-badge hidden">
+      <span id="header-username">Игрок</span>
+      <button id="logout-btn" class="btn btn-small btn-outline">Выйти</button>
+    </div>
+  </header>
+
+  <main class="app-container">
+    <!-- ЭКРАН 1: Авторизация / Регистрация -->
+    <section id="screen-auth" class="screen">
+      <div class="card auth-card">
+        <h1>Вход в игру</h1>
+        <p class="subtitle">Введите логин и пароль для сохранения сессии</p>
+        <form id="auth-form" class="form-stack">
+          <input type="text" id="auth-username" placeholder="Ваш никнейм" required minlength="2" maxlength="16">
+          <input type="password" id="auth-password" placeholder="Пароль" required minlength="3">
+          <div class="btn-group">
+            <button type="submit" data-mode="login" class="btn btn-primary">Войти</button>
+            <button type="submit" data-mode="register" class="btn btn-secondary">Регистрация</button>
+          </div>
+          <p id="auth-error" class="error-text"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- ЭКРАН 2: Лобби -->
+    <section id="screen-lobby" class="screen hidden">
+      <div class="lobby-header">
+        <h2>Игровые комнаты</h2>
+        <form id="create-room-form" class="inline-form">
+          <input type="text" id="room-name-input" placeholder="Название комнаты" required maxlength="24">
+          <button type="submit" class="btn btn-primary">+ Создать комнату</button>
+        </form>
+      </div>
+      <div id="rooms-list" class="rooms-grid"></div>
+    </section>
+
+    <!-- ЭКРАН 3: Комната ожидания -->
+    <section id="screen-waiting" class="screen hidden">
+      <div class="card waiting-card">
+        <div class="waiting-top">
+          <div>
+            <h2 id="waiting-room-title">Комната</h2>
+            <span class="badge">Код: <strong id="waiting-room-code">----</strong></span>
+          </div>
+          <button id="leave-room-btn" class="btn btn-outline">Покинуть комнату</button>
+        </div>
+
+        <div class="players-waiting-box">
+          <h3>Игроки в комнате (<span id="waiting-count">0</span>/12):</h3>
+          <ul id="waiting-players-list" class="players-list"></ul>
+        </div>
+
+        <div id="host-controls" class="host-controls hidden">
+          <p class="hint">Минимум 4 игрока для начала партии</p>
+          <button id="start-game-btn" class="btn btn-primary btn-large" disabled>Начать игру</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ЭКРАН 4: Игровой стол -->
+    <section id="screen-game" class="screen hidden">
+      <div class="game-top-bar">
+        <div class="phase-info">
+          <span id="game-day-counter" class="badge">День 1</span>
+          <h2 id="game-phase-title">Ночь: Ход Любовницы</h2>
+        </div>
+        <div class="timer-box">
+          <span>Осталось:</span>
+          <strong id="game-timer">00:45</strong>
+        </div>
+        <div class="my-role-box">
+          <span>Ваша роль:</span>
+          <strong id="my-role-name" class="role-tag">???</strong>
+        </div>
+      </div>
+
+      <div id="narrator-banner" class="narrator-banner">
+        Город засыпает. Просыпается Любовница и делает свой выбор...
+      </div>
+
+      <div id="game-table" class="game-table"></div>
+
+      <div id="action-panel" class="action-panel hidden">
+        <p id="action-prompt">Выберите цель:</p>
+        <button id="confirm-action-btn" class="btn btn-primary" disabled>Подтвердить выбор</button>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
