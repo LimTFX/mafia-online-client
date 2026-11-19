@@ -43,7 +43,7 @@ export function renderRoomsList(rooms, onJoinRoom) {
       className: 'card',
       children: [
         createEl('h3', {text: room.name}),
-        clearEl('p', {
+        createEl('p', {
           className: 'subtitle',
           text: `Код: ${room.code} ::|:: Игроков: ${room.playerCount}/12`
         }),
@@ -87,3 +87,43 @@ export function renderWaitingRoom(room) {
   }
 }
 
+export function renderGameRoom(room, onSelectTarget) {
+  const phaseCfg = PHASES[room.phase] || PHASES.WAITING;
+  const me = room.players.find ((p) => p.id === state.user?.id);
+
+  qs('#game-day-counter').textContent = `День ${room.dayNumber || 1}`;
+  qs('#game-phase-title').textContent = phaseCfg.title;
+  qs('#narrator-banner').textContent = room.lastAnnouncement || phaseCfg.banner;
+
+  const myRoleObj = me?.role ? ROLES[me.role] : null;
+  qs('#my-role-name').textContent = myRoleObj ? myRoleObj.name : 'Неизвестно';
+
+  const table = qs('#game-table');
+  clearEl(table);
+
+  room.players.forEach((player) => {
+    const seatClasses = ['player-seat'];
+    if (!player.isAlive) seatClasses.push('dead');
+
+    const statusText = !player.isAlive
+      ? `Выбыл (${ROLES[player.role]?.name || 'Роль скрыта'})`
+      : player.id === me?.id
+        ? 'Это вы'
+        : 'В игре';
+    
+    const seat = createEl('div', {
+      className: seatClasses.join(' '),
+      dataset: {playerId: String(player.id)},
+      children: [
+        createEl('div', {
+            className: 'avatar',
+            text: player.username.slice(0, 2).toUpperCase()
+        }),
+        createEl('strong', {text: player.username}),
+        createEl('span', {className: 'status-label', text: statusText})
+      ]
+    });
+
+    table.appendChild(seat);
+  });
+}
