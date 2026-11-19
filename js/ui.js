@@ -1,7 +1,6 @@
 import { qs, qsa, createEl, clearEl } from './domHelpers.js';
 import { ROLES, PHASES } from './config.js';
 import { state } from './state.js';
-import { act } from 'react';
 
 export function showScreen(screenId) {
   qsa('.screen').forEach((sec) => sec.classList.add('hidden'));
@@ -22,11 +21,11 @@ export function renderHeader() {
 }
 
 export function renderRoomsList(rooms, onJoinRoom) {
-  const contsiner = qs('#rooms-list');
+  const container = qs('#rooms-list');
   clearEl(container);
 
-  if (!rooms.lenght) {
-    contsiner.appendChild(
+  if (!rooms.length) {
+    container.appendChild(
       createEl('p', {className: 'subtitle', text: 'Активных комнат пока нет. Создайте первую!'})
     );
     return;
@@ -52,13 +51,13 @@ export function renderRoomsList(rooms, onJoinRoom) {
       ]
     });
 
-    contsiner.appendChild(card);
+    container.appendChild(card);
   });
 }
 
 export function renderWaitingRoom(room) {
   qs('#waiting-room-title').textContent = room.name;
-  qs('#waiting-roo-code').textContent = room.code;
+  qs('#waiting-room-code').textContent = room.code;
   qs('#waiting-count').textContent = String(room.players.lenght);
 
   const list = qs('#waiting-players-list');
@@ -70,8 +69,8 @@ export function renderWaitingRoom(room) {
       children: [
         createEl('span', {text: player.username}),
         createEl('span', {
-            className: 'badge',
-            text: isHost ? 'Создатель' : 'Готов'
+          className: 'badge',
+          text: isHost ? 'Создатель' : 'Готов'
         })
       ]
     });
@@ -82,7 +81,7 @@ export function renderWaitingRoom(room) {
   const startBtn = qs('#start-game-btn');
   if (state.user && room.hostId === state.user.id) {
     hostControls.classList.remove('hidden');
-    startBtn.disabled = room.players.lenght < 4;
+    startBtn.disabled = room.players.length < 4;
   } else {
     hostControls.classList.add('hidden');
   }
@@ -90,7 +89,7 @@ export function renderWaitingRoom(room) {
 
 export function renderGameRoom(room, onSelectTarget) {
   const phaseCfg = PHASES[room.phase] || PHASES.WAITING;
-  const me = room.players.find ((p) => p.id === state.user?.id);
+  const me = room.players.find((p) => p.id === state.user?.id);
 
   qs('#game-day-counter').textContent = `День ${room.dayNumber || 1}`;
   qs('#game-phase-title').textContent = phaseCfg.title;
@@ -120,14 +119,14 @@ export function renderGameRoom(room, onSelectTarget) {
       : player.id === me?.id
         ? 'Это вы'
         : 'В игре';
-    
+
     const seat = createEl('div', {
       className: seatClasses.join(' '),
       dataset: {playerId: String(player.id)},
       children: [
         createEl('div', {
-            className: 'avatar',
-            text: player.username.slice(0, 2).toUpperCase()
+          className: 'avatar',
+          text: player.username.slice(0, 2).toUpperCase()
         }),
         createEl('strong', {text: player.username}),
         createEl('span', {className: 'status-label', text: statusText})
