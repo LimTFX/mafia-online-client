@@ -1,6 +1,7 @@
 import { qs, qsa, createEl, clearEl } from './domHelpers.js';
 import { ROLES, PHASES } from './config.js';
 import { state } from './state.js';
+import { act } from 'react';
 
 export function showScreen(screenId) {
   qsa('.screen').forEach((sec) => sec.classList.add('hidden'));
@@ -98,12 +99,21 @@ export function renderGameRoom(room, onSelectTarget) {
   const myRoleObj = me?.role ? ROLES[me.role] : null;
   qs('#my-role-name').textContent = myRoleObj ? myRoleObj.name : 'Неизвестно';
 
+  const canAct = Boolean(
+    me &&
+    me.isAlive &&
+    !state.actionSubmitted &&
+    (phaseCfg.activeRole === 'ALL' || phaseCfg.activeRole === me.role)
+  );
+
   const table = qs('#game-table');
   clearEl(table);
 
   room.players.forEach((player) => {
+    const isSelected = state.selectedTargetId === player.id;
     const seatClasses = ['player-seat'];
     if (!player.isAlive) seatClasses.push('dead');
+    if (isSelected) seatClasses.push('selected');
 
     const statusText = !player.isAlive
       ? `Выбыл (${ROLES[player.role]?.name || 'Роль скрыта'})`
@@ -124,6 +134,20 @@ export function renderGameRoom(room, onSelectTarget) {
       ]
     });
 
+    if (canAct && player.isAlive) {
+      seat.addEventListener('click', () => onSelectTarget(player.id));
+    }
+
     table.appendChild(seat);
   });
+
+  const actionPanel = qs('#action-panel');
+  const confirmBtn = qs('#confirm-action-btn');
+  if (canAct) {
+    actionPanel.classList.remove('hidden');
+    qs('#action-prompt').textContent = phaseCfg.prompt;
+    confirmBtn.disabled = !state.selectedTargetId;
+  } else {
+    actionPanel.classList.add('hidden');
+  }
 }
