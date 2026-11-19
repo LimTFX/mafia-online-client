@@ -102,13 +102,40 @@ input:focus {
   color: var(--text-muted);
 }
 
+.narrator-banner {
+  background: linear-gradient(90deg, rgba(225, 29, 72, 0.15), rgba(59, 130, 246, 0.15));
+  border-left: 4px solid var(--accent-red);
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
 .player-seat {
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 1rem;
   text-align: center;
   cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+  position: relative;
+}
+
+.player-seat:hover:not(.dead) {
+  transform: translateY(-2px);
+  border-color: var(--accent-blue);
+}
+
+.player-seat.selected {
+  border-color: var(--accent-red);
+  background: rgba(225, 29, 72, 0.12);
+}
+
+.player-seat.dead {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(1);
 }
 
 .player-seat .avatar {
@@ -122,6 +149,13 @@ input:focus {
   justify-content: center;
   font-weight: 700;
   font-size: 1.2rem;
+}
+
+.player-seat .status-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.35rem;
 }
 
 .action-panel {
