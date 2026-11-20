@@ -1,5 +1,6 @@
 import { qs } from './domHelpers.js';
 import { state, loadSession, saveSession, clearSession } from './state.js';
+import { api } from './api.js';
 import {
   showScreen,
   renderHeader,
@@ -8,74 +9,143 @@ import {
   renderGameRoom
 } from './ui.js';
 
-// Временные моковые данные для проверки DOM-рендеринга (будут удалены при подключении API)
-const MOCK_ROOM = {
-  id: 1,
-  name: 'Ночной клуб',
-  code: '7492',
-  status: 'PLAYING',
-  hostId: 1,
-  dayNumber: 1,
-  phase: 'NIGHT_MAFIA',
-  lastAnnouncement: 'Город засыпает. Просыпается Мафия и выбирает жертву...',
-  players: [
-    { id: 1, username: 'Алексей', role: 'MAFIA', isAlive: true },
-    { id: 2, username: 'Мария', role: 'DOCTOR', isAlive: true },
-    { id: 3, username: 'Дмитрий', role: 'DETECTIVE', isAlive: true },
-    { id: 4, username: 'Елена', role: 'MISTRESS', isAlive: true },
-    { id: 5, username: 'Иван', role: 'CIVILIAN', isAlive: false }
-  ]
-};
+let syncInterval = null;
 
 function handleSelectTarget(targetId) {
   state.selectedTargetId = targetId;
   renderGameRoom(state.currentRoom, handleSelectTarget);
 }
 
-function initMockPreview() {
+function syncCurrentView() {
+  const room = state.currentRoom;
+  if (!room) return;
+
+  if (room.status === 'WAITING') {
+    showScreen('screen-waiting');
+    renderWaitingRoom(room);
+  } else {
+    showScreen('screen-game');
+    renderGameRoom(room, handleSelectTarget);
+  }
+}
+
+async function refreshLobby() {
+  const { rooms } = await api.getRooms();
+  renderRoomsList(rooms, async (roomId) => {
+    const { room } = await api.joinRoom(roomId);
+    state.currentRoom = room;
+    syncCurrentView();
+  });
+}
+
+function startPolling() {
+  if (syncInterval) clearInterval(syncInterval);
+  syncInterval = setInterval(async () => {
+    if (!state.token) return;
+    try {
+      if (state.currentRoom) {
+        const prevPhase = state.currentRoom.phase;
+        const { room } = await api.getRoom(state.currentRoom.id);
+        if (room.phase !== prevPhase) {
+          state.selectedTargetId = null;
+          state.actionSubmitted = false;
+        }
+        state.currentRoom = room;
+        syncCurrentView();
+      } else {
+        await refreshLobby();
+      }
+    } catch {
+      state.currentRoom = null;
+      showScreen('screen-lobby');
+    }
+  }, 1500);
+}
+
+async function initApp() {
   loadSession();
 
-  if (!state.user) {
-    showScreen('screen-auth');
+  if (state.token) {
+    try {
+      const { user, activeRoom } = await api.getMe();
+      saveSession(state.token, user);
+      renderHeader();
+      if (activeRoom) {
+        state.currentRoom = activeRoom;
+        syncCurrentView();
+      } else {
+        showScreen('screen-lobby');
+        await refreshLobby();
+      }
+      startPolling();
+    } catch {
+      clearSession();
+      showScreen('screen-auth');
+    }
   } else {
-    renderHeader();
-    state.currentRoom = MOCK_ROOM;
-    showScreen('screen-game');
-    renderGameRoom(state.currentRoom, handleSelectTarget);
+    showScreen('screen-auth');
   }
 
-  qs('#auth-form').addEventListener('submit', (e) => {
+  qs('#auth-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const mode = e.submitter?.dataset.mode || 'login';
     const username = qs('#auth-username').value.trim();
-    if (!username) return;
-    saveSession('mock-token', { id: 1, username });
-    renderHeader();
-    renderRoomsList(
-      [{ id: 1, name: 'Ночной клуб', code: '7492', status: 'WAITING', playerCount: 4 }],
-      () => {
-        state.currentRoom = MOCK_ROOM;
-        showScreen('screen-waiting');
-        renderWaitingRoom(state.currentRoom);
-      }
-    );
+    const password = qs('#auth-password').value;
+    const errorEl = qs('#auth-error');
+    errorEl.textContent = '';
+
+    try {
+      const { token, user } = await api.auth(mode, username, password);
+      saveSession(token, user);
+      renderHeader();
+      showScreen('screen-lobby');
+      await refreshLobby();
+      startPolling();
+    } catch (err) {
+      errorEl.textContent = err.message;
+    }
+  });
+
+  qs('#create-room-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = qs('#room-name-input');
+    const name = input.value.trim();
+    if (!name) return;
+
+    const { room } = await api.createRoom(name);
+    input.value = '';
+    state.currentRoom = room;
+    syncCurrentView();
+  });
+
+  qs('#leave-room-btn').addEventListener('click', async () => {
+    if (!state.currentRoom) return;
+    await api.leaveRoom(state.currentRoom.id);
+    state.currentRoom = null;
     showScreen('screen-lobby');
+    await refreshLobby();
   });
 
-  qs('#start-game-btn').addEventListener('click', () => {
-    showScreen('screen-game');
-    renderGameRoom(state.currentRoom, handleSelectTarget);
+  qs('#start-game-btn').addEventListener('click', async () => {
+    if (!state.currentRoom) return;
+    const { room } = await api.startGame(state.currentRoom.id);
+    state.currentRoom = room;
+    syncCurrentView();
   });
 
-  qs('#confirm-action-btn').addEventListener('click', () => {
+  qs('#confirm-action-btn').addEventListener('click', async () => {
+    if (!state.currentRoom || !state.selectedTargetId) return;
+    await api.sendAction(state.currentRoom.id, state.selectedTargetId);
     state.actionSubmitted = true;
     renderGameRoom(state.currentRoom, handleSelectTarget);
   });
 
   qs('#logout-btn').addEventListener('click', () => {
+    clearInterval(syncInterval);
     clearSession();
     renderHeader();
     showScreen('screen-auth');
   });
 }
 
-document.addEventListener('DOMContentLoaded', initMockPreview);
+document.addEventListener('DOMContentLoaded', initApp);

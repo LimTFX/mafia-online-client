@@ -35,5 +35,11 @@ export const api = {
     }),
   joinRoom: (roomId) => request(`/rooms/${roomId}/join`, { method: 'POST' }),
   leaveRoom: (roomId) => request(`/rooms/${roomId}/leave`, { method: 'POST' }),
-  getRoom: (roomId) => request(`/rooms/${roomId}`)
+  getRoom: (roomId) => request(`/rooms/${roomId}`),
+  startGame: (roomId) => request(`/rooms/${roomId}/start`, { method: 'POST' }),
+  sendAction: (roomId, targetId) =>
+    request(`/rooms/${roomId}/action`, {
+      method: 'POST',
+      body: JSON.stringify({ targetId })
+    })
 };
