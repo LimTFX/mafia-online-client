@@ -26,5 +26,14 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ username, password })
     }),
-  getMe: () => request('/me')
+  getMe: () => request('/me'),
+  getRooms: () => request('/rooms'),
+  createRoom: (name) =>
+    request('/rooms', {
+      method: 'POST',
+      body: JSON.stringify({ name })
+    }),
+  joinRoom: (roomId) => request(`/rooms/${roomId}/join`, { method: 'POST' }),
+  leaveRoom: (roomId) => request(`/rooms/${roomId}/leave`, { method: 'POST' }),
+  getRoom: (roomId) => request(`/rooms/${roomId}`)
 };
