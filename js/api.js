@@ -3,6 +3,9 @@ import { state } from './state.js';
 
 async function request(endpoint, option = {}) {
   const headers = { 'Content-Type': 'application/json' };
+  if (state.token) {
+    headers.Authorization = `Bearer ${state.token}`;
+  }
 
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...option,
@@ -17,4 +20,11 @@ async function request(endpoint, option = {}) {
   return data;
 }
 
-export const api = {};
+export const api = {
+  auth: (mode, username, password) =>
+    request(`/auth/${mode}`, {
+      method: 'POST',
+      body: JSON.stringify({ username, password })
+    }),
+  getMe: () => request('/me')
+};
